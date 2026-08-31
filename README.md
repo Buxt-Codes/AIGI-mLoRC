@@ -45,9 +45,13 @@ The weights repo is private — you need HF access to
 `buxtcodes/TechJam-Modulated-LoRC`. `mlorc-full.pt` is the only *weights*
 file downloaded — building the backbone's architecture (before loading those
 weights onto it) still fetches DINOv3's small `config.json` (a few KB, not
-its weights) from `facebook/dinov3-vith16plus-pretrain-lvd1689m`, which is a
-free but gated HF repo — accept its license on the model page once. Nothing
-sizeable comes from anywhere but `mlorc-full.pt`.
+its weights) from `facebook/dinov3-vith16plus-pretrain-lvd1689m`. That repo
+is **gated with manual review** (`gated: manual`, confirmed via the HF API)
+— not an instant click-through license: request access on the model page
+and wait for Meta to approve it *before* your token can fetch anything from
+that repo, even the tiny config file. Do this ahead of time; it's a real
+prerequisite, not a formality. Nothing sizeable comes from anywhere but
+`mlorc-full.pt`.
 
 ## Repository structure
 
