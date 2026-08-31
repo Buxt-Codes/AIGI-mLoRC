@@ -57,6 +57,7 @@ We have benchmarked three other models, namely [LoRC](https://arxiv.org/pdf/2608
 | LoRC | 95.01% | 0.9911 | 91.92% | **0.9739** |
 | DDA | 87.31% | 0.9371 | 83.32% | 0.9070 |
 | DGS-Net | 64.70% | 0.8140 | 55.80% | 0.6510 |
+
 *Clean represents an evaluation over non transformed images.*
 
 ## 7. Future Work
