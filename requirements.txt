@@ -1,0 +1,6 @@
+torch>=2.6
+torchvision>=0.21
+transformers>=4.50
+peft>=0.13
+huggingface_hub>=0.26
+Pillow>=10.0

@@ -1,0 +1,114 @@
+[
+  {
+    "condition": "clean",
+    "n": 30000,
+    "accuracy_pct": 95.97,
+    "balanced_acc_pct": 96.57,
+    "auc": 0.9929
+  },
+  {
+    "condition": "Blur sigma=0.5",
+    "n": 2154,
+    "accuracy_pct": 96.47,
+    "balanced_acc_pct": 96.86,
+    "auc": 0.9931
+  },
+  {
+    "condition": "Blur sigma=1.0",
+    "n": 2154,
+    "accuracy_pct": 96.01,
+    "balanced_acc_pct": 96.25,
+    "auc": 0.9899
+  },
+  {
+    "condition": "Blur sigma=2.0",
+    "n": 2154,
+    "accuracy_pct": 92.71,
+    "balanced_acc_pct": 93.54,
+    "auc": 0.9761
+  },
+  {
+    "condition": "CenterCrop 80%",
+    "n": 2128,
+    "accuracy_pct": 95.49,
+    "balanced_acc_pct": 95.09,
+    "auc": 0.9893
+  },
+  {
+    "condition": "ColorJitter +-20%",
+    "n": 2128,
+    "accuracy_pct": 95.72,
+    "balanced_acc_pct": 96.12,
+    "auc": 0.989
+  },
+  {
+    "condition": "JPEG q=30",
+    "n": 2154,
+    "accuracy_pct": 81.89,
+    "balanced_acc_pct": 86.11,
+    "auc": 0.9551
+  },
+  {
+    "condition": "JPEG q=50",
+    "n": 2154,
+    "accuracy_pct": 87.14,
+    "balanced_acc_pct": 90.01,
+    "auc": 0.9651
+  },
+  {
+    "condition": "JPEG q=70",
+    "n": 2154,
+    "accuracy_pct": 91.32,
+    "balanced_acc_pct": 93.09,
+    "auc": 0.9812
+  },
+  {
+    "condition": "JPEG q=90",
+    "n": 2154,
+    "accuracy_pct": 94.99,
+    "balanced_acc_pct": 95.91,
+    "auc": 0.9893
+  },
+  {
+    "condition": "Noise sigma=0.02",
+    "n": 2128,
+    "accuracy_pct": 93.66,
+    "balanced_acc_pct": 92.61,
+    "auc": 0.98
+  },
+  {
+    "condition": "Noise sigma=0.05",
+    "n": 2128,
+    "accuracy_pct": 91.21,
+    "balanced_acc_pct": 92.46,
+    "auc": 0.9712
+  },
+  {
+    "condition": "Noise sigma=0.10",
+    "n": 2128,
+    "accuracy_pct": 82.38,
+    "balanced_acc_pct": 85.88,
+    "auc": 0.9425
+  },
+  {
+    "condition": "Resize 0.25x",
+    "n": 2128,
+    "accuracy_pct": 90.08,
+    "balanced_acc_pct": 88.15,
+    "auc": 0.9585
+  },
+  {
+    "condition": "Resize 0.5x",
+    "n": 2154,
+    "accuracy_pct": 95.13,
+    "balanced_acc_pct": 95.11,
+    "auc": 0.9875
+  },
+  {
+    "condition": "full (all transforms pooled)",
+    "n": 30000,
+    "accuracy_pct": 91.73,
+    "balanced_acc_pct": 92.65,
+    "auc": 0.9723
+  }
+]
