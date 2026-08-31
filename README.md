@@ -14,22 +14,24 @@ In the paper LoRC, they present the idea that AIGI generators exhibit a low rank
 As you can see, the landscape of the AIGI subspace is relatively smoother and this phenomenon is present as a feature in all modern generator families. Furthermore, to showcase its effectiveness as a feature for detection and its robustness to transformations we conduct an experiment that uses a scalar threshold over the mean residual magnitude to segregate real images from AIGI. Without any finetuning of the DINOv3 backbone (training free), we achieve a balanced accuracy of **78.45%** and **75.41%** for non transformed and transformed images respectively. This highlights the effectiveness of this feature for detection and also its robustness against transformations.
 
 ## **2. Model Architecture**
-We employ the (DINOv3 H+)[https://huggingface.co/facebook/dinov3-vith16plus-pretrain-lvd1689m] pretrained backbone for its dense high quality features. As for the model's architecture, we take it from the LoRC paper as seen below.
+We employ the [DINOv3 H+](https://huggingface.co/facebook/dinov3-vith16plus-pretrain-lvd1689m) pretrained backbone for its dense high quality features. As for the model's architecture, we take it from the LoRC paper as seen below.
 
 ![mLoRC Architecture](assets/mlorc_architecture.jpg)
 
 **2.1. Semantic Residual Orthogonalisation:** Taking the patch embeddings, we decompose them with orthogonalisation into two components, one along the CLS token's global semantic and another as its residual. This decomposition allows us to utilise the semantic residual as a feature and also removes the global semantic information enabling better cross domain generalisation.
+
 **2.2. Low Rank Attention:** As the paper shows that residual discrepancies concentrate in a structured low-dimensional subspace, they make use of low rank attention to ensure that the model focuses exclusively on the dominant low-rank components where the real/fake discrepancy is most pronounced.
+
 **2.3. Linear Classifier:** We use a simple Linear layer for classifying real/fake from the concatenated CLS token and output of the low rank attention for residuals.
 
 ## **3. Training**
-We employ LoRC's training over the (Dual Data Alignment)[https://arxiv.org/pdf/2505.14359] of 144k as specified within the paper however with a novel Modulated Energy Training (MET) mechanism. Our MET mechanism allows our model to generalise better to the residual subspaces not seen in the DDA dataset naturally. MET is an algorithm that applies a random rescale of the residuals, sampled from between 0.5 to 1.5, with the same rescale applied to both real and fake images in a pair.
+We employ LoRC's training over the [Dual Data Alignment](https://arxiv.org/pdf/2505.14359) of 144k as specified within the paper however with a novel Modulated Energy Training (MET) mechanism. Our MET mechanism allows our model to generalise better to the residual subspaces not seen in the DDA dataset naturally. MET is an algorithm that applies a random rescale of the residuals, sampled from between 0.5 to 1.5, with the same rescale applied to both real and fake images in a pair.
 
 We found that the main failure modes of the original LoRC training was due to a gap in training data distribution. The test data covered average semantic residual magnitude distributions not seen within training and thus through modulation, the model generalises to more variations and performs better.
 
 ## **4. Evaluation**
 ### **4.1. Results**
-We curated a 30k image set of (WildFake)[https://huggingface.co/datasets/buxtcodes/WildFake-Sample] that comprises of randomly sampled 750 images for 26 generators across different categories (GAN-based, non-SD Diffusion, SD Diffusion and others). Its composition is of 19,500 fake and 10,500 real images.
+We curated a 30k image set of [WildFake](https://huggingface.co/datasets/buxtcodes/WildFake-Sample) that comprises of randomly sampled 750 images for 26 generators across different categories (GAN-based, non-SD Diffusion, SD Diffusion and others). Its composition is of 19,500 fake and 10,500 real images.
 
 Our model achieve a balanced accuracy of **96.57%** and **92.65%** for non-transformed and transformed images respectively. The transformed evaluation uses a uniform sample over each transformation for every image thus each image would have one of the transformations as specified in the transformation list provided.
 
@@ -47,7 +49,7 @@ Over a RTX 3090 Ti (24GB) with 224×224 input, bf16 autocast and `cudnn.benchmar
 Showing how our model can scale to real time use cases effectively as required in production environments with heavy load such as TikTok.
 
 ## 6. Comparisons with Other Baselines
-We have benchmarked three other models, namely (LoRC)[https://arxiv.org/pdf/2608.20882v1], (DDA)[https://arxiv.org/pdf/2505.14359v6] and (DGS-Net)[https://arxiv.org/pdf/2511.13108]. We show how mLoRC manages to improve on LoRC and also that it performs significantly better than DDA and DGS-Net. 
+We have benchmarked three other models, namely [LoRC](https://arxiv.org/pdf/2608.20882v1), [DDA](https://arxiv.org/pdf/2505.14359v6) and [DGS-Net](https://arxiv.org/pdf/2511.13108). We show how mLoRC manages to improve on LoRC and also that it performs significantly better than DDA and DGS-Net. 
 
 | Model | Clean BAcc | Clean AUC | Transformed BAcc | Transformed AUC |
 |---|---|---|---|---|
@@ -71,6 +73,7 @@ source venv/bin/activate
 ```
 
 **8.2. Usage**
+
 **Directory Prediction**
 ```bash
 python predict.py --input_dir <path/to/images> --output results.json
