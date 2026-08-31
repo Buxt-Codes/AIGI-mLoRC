@@ -1,6 +1,6 @@
-# Run 1 — Detailed WildFake Results
+# mLoRC — Detailed WildFake Results
 
-Model: Modulated-LoRC run 1 (DINOv3 ViT-H+/16, LoRA rank=32/α=32, attn_rank=64, pair-aware energy augmentation α∈[0.5,1.5]). Full 30,000-image WildFake eval (10,500 real + 19,500 fake, 32 groups). Raw per-image/per-group/per-condition data: `wildfake_eval/`.
+Model: mLoRC (Modulated-LoRC) (DINOv3 ViT-H+/16, LoRA rank=32/α=32, attn_rank=64, pair-aware energy augmentation α∈[0.5,1.5]). Full 30,000-image WildFake eval (10,500 real + 19,500 fake, 32 groups). Raw per-image/per-group/per-condition data: `wildfake_eval/`.
 
 **Overall clean:** BAcc=96.57%  Acc=95.97%  AUC=0.9929  n=30000
 **Overall full (all transforms pooled):** BAcc=92.65%  Acc=91.73%  AUC=0.9723  n=30000

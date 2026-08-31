@@ -25,7 +25,7 @@ JPEG_QUALITY = 96
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 
-# Must match the config the checkpoint was trained with (run 1: pair-aware
+# Must match the config the checkpoint was trained with (mLoRC: pair-aware
 # energy augmentation, DINOv3 ViT-H+/16, LoRA rank=32/α=32, attn_rank=64).
 MODEL_KWARGS = dict(attn_rank=64, lora_rank=32, lora_alpha=32)
 
@@ -85,22 +85,16 @@ class ModulatedLoRC:
         return self.tf(img.convert("RGB"))
 
     @torch.no_grad()
-    def predict_image(self, image: str | Path | Image.Image) -> dict:
-        x = self._load(image).unsqueeze(0).to(self.device)
-        with torch.autocast(device_type=self.device, dtype=torch.bfloat16,
-                             enabled=(self.device == "cuda")):
-            probs, pred = self.model.predict(x)
-        p_real, p_fake = probs[0].float().tolist()
-        return {"label": "fake" if pred.item() == 1 else "real", "p_fake": p_fake, "p_real": p_real}
-
-    @torch.no_grad()
     def predict_images(self, images: list, batch_size: int = 32) -> list[dict]:
         results = []
         for i in range(0, len(images), batch_size):
             batch = torch.stack([self._load(p) for p in images[i:i + batch_size]]).to(self.device)
             with torch.autocast(device_type=self.device, dtype=torch.bfloat16,
                                  enabled=(self.device == "cuda")):
-                probs, preds = self.model.predict(batch)
-            for p, pred in zip(probs.float().tolist(), preds.tolist()):
-                results.append({"label": "fake" if pred == 1 else "real", "p_fake": p[1], "p_real": p[0]})
+                probs, _ = self.model.predict(batch)
+            for p_real, p_fake in probs.float().tolist():
+                results.append({"label": "fake" if p_fake >= 0.5 else "real", "p_fake": p_fake, "p_real": p_real})
         return results
+
+    def predict_image(self, image: str | Path | Image.Image) -> dict:
+        return self.predict_images([image])[0]

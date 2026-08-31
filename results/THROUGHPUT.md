@@ -1,4 +1,4 @@
-# Run 1 — Inference Throughput
+# mLoRC — Inference Throughput
 
 Measured **directly in the main research codebase** (`lorc.model.LoRC`, the
 same architecture this repo's `modulated_lorc/model.py` reproduces) — not

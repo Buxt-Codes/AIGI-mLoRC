@@ -123,7 +123,7 @@ def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--data_dir", required=True, type=Path, help="Local WildFake eval dir (manifest.csv + transform_plan.csv)")
     p.add_argument("--out_dir", default=Path("results/wildfake_eval"), type=Path)
-    p.add_argument("--label", default="run1")
+    p.add_argument("--label", default="mLoRC")
     p.add_argument("--mode", default="both", choices=["clean", "full", "both"])
     p.add_argument("--batch_size", type=int, default=64)
     p.add_argument("--hf_token", default=None)

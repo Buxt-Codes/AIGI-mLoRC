@@ -46,7 +46,7 @@ a gated but free HF model — accept its license on the model page once).
 modulated_lorc/     the model + HF-hub weight loader (see "Directory-only inference" above)
 predict.py           image directory -> JSON (image_path, pred)
 evaluate/            WildFake evaluator (clean + full/transformed modes)
-results/             ported WildFake eval results for run 1 (raw CSVs/JSON + two writeups)
+results/             ported WildFake eval results for mLoRC (raw CSVs/JSON + two writeups)
 ablations/           robustness summary + error analysis (post-processed from results/)
 ```
 
@@ -68,10 +68,10 @@ too large):
 
 ```bash
 python evaluate/evaluate_wildfake.py --data_dir <path/to/wildfake_eval> \
-    --out_dir results/wildfake_eval --label run1 --mode both
+    --out_dir results/wildfake_eval --label mLoRC --mode both
 ```
 
-Writes `run1_{clean,full}_per_image.csv`, `_by_group.csv`, `_by_condition.csv`
+Writes `mLoRC_{clean,full}_per_image.csv`, `_by_group.csv`, `_by_condition.csv`
 (full mode only), `_summary.json` — the same files already checked into
 `results/wildfake_eval/` from the original run. `results/RESULTS.md` has the
 full per-group breakdown (clean, then full, then transform conditions ranked
