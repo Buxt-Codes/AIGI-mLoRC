@@ -22,9 +22,14 @@ depends on (proven exactly, not just observed empirically — see
   plus the pair-aware energy augmentation described above, ramped in
   linearly across the epoch (0% of batches augmented at step 0 → 100% by the
   final step).
-- **Weights:** hosted on a private HF hub repo
-  (`buxtcodes/TechJam-Modulated-LoRC`), pulled automatically at runtime — no
-  weights are committed to this repo.
+- **Weights:** ONE file, `mlorc-full.pt` (~1.6GB, bf16), hosted on a private
+  HF hub repo (`buxtcodes/TechJam-Modulated-LoRC`), pulled automatically at
+  runtime. LoRA is folded directly into the backbone weights (`peft`'s
+  `merge_and_unload()`, verified numerically exact before shipping — max
+  output difference 1e-12, pure floating-point noise), so this one file is
+  fully self-contained: no separate download of the DINOv3 backbone from
+  anywhere else, no LoRA config to keep in sync. No weights are committed to
+  this repo itself.
 
 ## Setup and installation
 
@@ -37,8 +42,12 @@ huggingface-cli login         # or: export HF_TOKEN=hf_...
 ```
 
 The weights repo is private — you need HF access to
-`buxtcodes/TechJam-Modulated-LoRC` (and to `facebook/dinov3-vith16plus-pretrain-lvd1689m`,
-a gated but free HF model — accept its license on the model page once).
+`buxtcodes/TechJam-Modulated-LoRC`. `mlorc-full.pt` is the only *weights*
+file downloaded — building the backbone's architecture (before loading those
+weights onto it) still fetches DINOv3's small `config.json` (a few KB, not
+its weights) from `facebook/dinov3-vith16plus-pretrain-lvd1689m`, which is a
+free but gated HF repo — accept its license on the model page once. Nothing
+sizeable comes from anywhere but `mlorc-full.pt`.
 
 ## Repository structure
 
@@ -47,7 +56,6 @@ modulated_lorc/     the model + HF-hub weight loader (see "Directory-only infere
 predict.py           image directory -> JSON (image_path, pred)
 evaluate/            WildFake evaluator (clean + full/transformed modes) + sample-set downloader
 results/             ported WildFake eval results for mLoRC (raw CSVs/JSON + two writeups)
-ablations/           robustness summary + error analysis (post-processed from results/)
 ```
 
 ## Steps to reproduce results
@@ -62,7 +70,7 @@ python predict.py --input_dir <path/to/images> --output results.json
 one entry per image found (recursively) under `<path/to/images>`.
 
 **Full WildFake benchmark** (what produced every number in this README and
-in `results/`/`ablations/`) — needs a local copy of the WildFake eval set
+in `results/`) — needs a local copy of the WildFake eval set
 (`manifest.csv` + `transform_plan.csv` + the images; not shipped in this repo
 directly — too large). Don't have one already? Pull it from the public HF
 dataset `buxtcodes/WildFake-Sample` (30,000 images, ~9.5GB) first:
@@ -82,8 +90,7 @@ it won't cover every group.
 Then evaluate:
 
 ```bash
-python evaluate/evaluate_wildfake.py --data_dir <path/to/wildfake_eval> \
-    --out_dir results/wildfake_eval --label mLoRC --mode both
+python evaluate/evaluate_wildfake.py --data_dir <path/to/wildfake_eval> --out_dir results/wildfake_eval --mode both
 ```
 
 **Verified**: this exact pipeline — fresh `git clone`, fresh venv,
@@ -99,21 +106,20 @@ full per-group breakdown (clean, then full, then transform conditions ranked
 best-to-worst); `results/THROUGHPUT.md` has the throughput benchmark on its
 own. Both were generated from these exact output files.
 
-The error-analysis/robustness-summary post-processing in `ablations/` was
-produced by `analysis/robustness_and_error_report.py` in the main research
-codebase (not shipped here — it just reads the same per-image CSVs
-`evaluate_wildfake.py` above writes). Inference throughput was likewise
-benchmarked directly in the main codebase (`lorc.model.LoRC`, the same
-architecture this package reproduces), not re-measured from this trimmed
-package, to avoid the trimmed implementation reporting a number the "real"
-implementation can't back up.
+The error-analysis/robustness-summary figures below were produced by
+`analysis/robustness_and_error_report.py` in the main research codebase (not
+shipped here — it just reads the same per-image CSVs `evaluate_wildfake.py`
+above writes). Inference throughput was likewise benchmarked directly in the
+main codebase (`lorc.model.LoRC`, the same architecture this package
+reproduces), not re-measured from this trimmed package, to avoid the trimmed
+implementation reporting a number the "real" implementation can't back up.
 
 ## Robustness Evaluation Summary
 
 Full 30,000-image WildFake eval, clean vs. representative transform
 conditions (full per-group breakdown for clean, for full, and every one of
 the 15 conditions ranked best-to-worst: `results/RESULTS.md`; raw data:
-`results/wildfake_eval/`; the same aggregate view: `ablations/robustness_summary.json`):
+`results/wildfake_eval/`):
 
 | condition | accuracy | balanced acc | AUC |
 |---|---|---|---|
@@ -129,8 +135,6 @@ hardest single conditions — both push accuracy down ~14pp from clean, well
 past blur or moderate noise.
 
 ## Error Analysis
-
-Full 30k-image error analysis: `ablations/error_analysis.json`.
 
 - **Clean:** false positive rate 0.5%, false negative rate 3.53%.
 - **Full (transformed):** false positive rate 1.5%, false negative rate 6.77%
@@ -150,7 +154,7 @@ Full 30k-image error analysis: `ablations/error_analysis.json`.
 - **Trade-off:** the clean→full accuracy drop is not uniform across
   generators. The five worst drops are DDPM (-16.7pp), DDIM (-15.6pp),
   **Imagen (-12.8pp)**, styleGAN (-9.9pp), starGAN (-9.2pp) — see
-  `ablations/group_tradeoffs.json`. Imagen (Google) is notable: it's one of
+  `results/RESULTS.md`. Imagen (Google) is notable: it's one of
   the strongest clean-mode generators (98.9%) but has the single largest
   per-generator recall drop of any *modern* commercial generator once
   transforms are applied, a real, specific weak point of this checkpoint
@@ -205,12 +209,11 @@ this architecture on this GPU, not an artifact of an under-sized batch.
   are on WildFake's fixed generator roster. An adversarially-aware or
   much-more-recent (2026-era) held-out generator would better test real
   generalization than another pass over the same benchmark.
-- **Checkpoint is a partial save (LoRA + head only, ~124MB):** correct and
-  intentional (the frozen backbone is reproducible from the public
-  pretrained weights, so shipping it again is wasteful), but it does mean
-  `predict.py`'s first run pays the cost of a fresh DINOv3 backbone
-  download — worth documenting more prominently for anyone timing
-  cold-start latency.
+- **Merged checkpoint is bf16, ~1.6GB** (vs. the earlier partial LoRA+head
+  save's ~124MB) — a deliberate trade: one self-contained file instead of
+  two separate downloads from two repos. `predict.py`'s first run still
+  pays a real download cost either way; this trades a smaller second
+  download for a larger single one.
 
 ## Team member contributions
 

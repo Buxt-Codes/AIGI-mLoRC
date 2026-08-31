@@ -17,10 +17,13 @@ from torchvision import transforms
 from .model import LoRC
 
 REPO_ID = "buxtcodes/TechJam-Modulated-LoRC"
-WEIGHTS_FILENAME = "modulated-lorc.pt"
+WEIGHTS_FILENAME = "mlorc-full.pt"  # LoRA merged into the backbone weights -- one file, no separate HF download
 IMAGE_SIZE, JPEG_QUALITY = 224, 96
 IMAGENET_MEAN, IMAGENET_STD = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
-MODEL_KWARGS = dict(attn_rank=64, lora_rank=32, lora_alpha=32)  # mLoRC's training config
+# lora_rank=0, pretrained=False: build the bare architecture (config only, no
+# weight download) -- mlorc-full.pt's state dict already contains every
+# weight (backbone included), so nothing else needs fetching from anywhere.
+MODEL_KWARGS = dict(attn_rank=64, lora_rank=0, pretrained=False)
 
 
 def _jpeg_pass(img: Image.Image) -> Image.Image:
@@ -51,10 +54,7 @@ class ModulatedLoRC:
 
         model = LoRC(**MODEL_KWARGS).to(device)
         ckpt = torch.load(weights_path, map_location=device, weights_only=False)
-        missing, _ = model.load_state_dict(ckpt.get("model_state", ckpt), strict=False)
-        if any("lora_" in k for k in missing):
-            raise RuntimeError(f"{weights_path}: LoRA weights missing after load — "
-                                "checkpoint/architecture mismatch, refusing to serve.")
+        model.load_state_dict(ckpt.get("model_state", ckpt), strict=True)  # full checkpoint -> exact match required
         model.eval()
         return cls(model, device)
 

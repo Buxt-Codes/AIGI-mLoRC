@@ -120,11 +120,17 @@ class LoRC(nn.Module):
         for p in raw_backbone.parameters():
             p.requires_grad_(False)
 
-        lora_cfg = LoraConfig(
-            r=lora_rank, lora_alpha=lora_alpha, lora_dropout=0.0, bias="none",
-            target_modules=lora_target_modules or ["q_proj", "k_proj", "v_proj", "o_proj"],
-        )
-        self.backbone = get_peft_model(raw_backbone, lora_cfg)
+        if lora_rank == 0:
+            # No adapter to add -- either the checkpoint has LoRA already
+            # merged into these weights (mlorc-full.pt), or this is a
+            # frozen-backbone-only variant. `raw_backbone` IS the model.
+            self.backbone = raw_backbone
+        else:
+            lora_cfg = LoraConfig(
+                r=lora_rank, lora_alpha=lora_alpha, lora_dropout=0.0, bias="none",
+                target_modules=lora_target_modules or ["q_proj", "k_proj", "v_proj", "o_proj"],
+            )
+            self.backbone = get_peft_model(raw_backbone, lora_cfg)
         self.attn_block = LowRankAttention(dim=backbone_dim, rank=attn_rank)
         self.classifier = nn.Linear(backbone_dim * 2, 2)
 

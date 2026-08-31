@@ -28,6 +28,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from modulated_lorc import ModulatedLoRC
 from transforms import FAMILY_BY_NAME, RAW_BY_NAME, stack_baseline_last, tf_jpeg
 
+LABEL = "mLoRC"
 IMAGE_SIZE = 224
 IMAGENET_MEAN, IMAGENET_STD = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 
@@ -111,7 +112,6 @@ def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--data_dir", required=True, type=Path, help="Local WildFake eval dir (manifest.csv + transform_plan.csv)")
     p.add_argument("--out_dir", default=Path("results/wildfake_eval"), type=Path)
-    p.add_argument("--label", default="mLoRC")
     p.add_argument("--mode", default="both", choices=["clean", "full", "both"])
     p.add_argument("--batch_size", type=int, default=64)
     p.add_argument("--hf_token", default=None)
@@ -137,15 +137,15 @@ def main():
 
         per_image = run_pass(model, args.data_dir, rows, conditions, args.batch_size)
 
-        write_csv(per_image, args.out_dir / f"{args.label}_{mode}_per_image.csv")
+        write_csv(per_image, args.out_dir / f"{LABEL}_{mode}_per_image.csv")
         overall = summarize(per_image, "")
         by_group = summarize(per_image, "group")
         by_condition = summarize(per_image, "condition") if mode == "full" else []
-        with open(args.out_dir / f"{args.label}_{mode}_summary.json", "w") as f:
+        with open(args.out_dir / f"{LABEL}_{mode}_summary.json", "w") as f:
             json.dump({"overall": overall, "by_group": by_group, "by_condition": by_condition}, f, indent=2)
-        write_csv(by_group, args.out_dir / f"{args.label}_{mode}_by_group.csv")
+        write_csv(by_group, args.out_dir / f"{LABEL}_{mode}_by_group.csv")
         if by_condition:
-            write_csv(by_condition, args.out_dir / f"{args.label}_{mode}_by_condition.csv")
+            write_csv(by_condition, args.out_dir / f"{LABEL}_{mode}_by_condition.csv")
 
         print(f"  Overall: BAcc={overall[0]['balanced_acc_pct']:.2f}  AUC={overall[0]['auc']:.4f}  n={overall[0]['n']}")
         print(f"  Saved to {args.out_dir}\n")
