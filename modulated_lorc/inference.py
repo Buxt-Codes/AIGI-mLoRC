@@ -8,6 +8,7 @@ private HF hub repo `buxtcodes/TechJam-Modulated-LoRC`, run predictions.
 from __future__ import annotations
 
 import io
+import shutil
 from pathlib import Path
 
 import torch
@@ -18,6 +19,8 @@ from .model import LoRC
 
 REPO_ID = "buxtcodes/TechJam-Modulated-LoRC"
 WEIGHTS_FILENAME = "mlorc-full.pt"  # LoRA merged into the backbone weights -- one file, no separate HF download
+CONFIG_FILENAME = "dinov3_config.json"  # architecture metadata only (no weights) -- mirrored here so
+# building the backbone's architecture never has to touch DINOv3's gated (manual-review) HF repo at all.
 IMAGE_SIZE, JPEG_QUALITY = 224, 96
 IMAGENET_MEAN, IMAGENET_STD = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 # lora_rank=0, pretrained=False: build the bare architecture (config only, no
@@ -51,8 +54,15 @@ class ModulatedLoRC:
 
         device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         weights_path = hf_hub_download(repo_id=repo_id, filename=filename, token=hf_token)
+        config_path = hf_hub_download(repo_id=repo_id, filename=CONFIG_FILENAME, token=hf_token)
+        # AutoConfig.from_pretrained(dir) looks for a file literally named
+        # "config.json" inside that directory -- point it at one containing
+        # just that, so building the architecture never touches DINOv3's repo.
+        config_dir = Path(config_path).parent / "_dinov3_config_dir"
+        config_dir.mkdir(exist_ok=True)
+        shutil.copy(config_path, config_dir / "config.json")
 
-        model = LoRC(**MODEL_KWARGS).to(device)
+        model = LoRC(backbone_config_path=str(config_dir), **MODEL_KWARGS).to(device)
         ckpt = torch.load(weights_path, map_location=device, weights_only=False)
         model.load_state_dict(ckpt.get("model_state", ckpt), strict=True)  # full checkpoint -> exact match required
         model.eval()

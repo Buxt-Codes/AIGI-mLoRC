@@ -57,10 +57,17 @@ class _HFBackboneWrapper(nn.Module):
 
 
 class HFBackboneAdapter(BackboneAdapter):
-    def load(self, name: str, pretrained: bool, **kwargs) -> nn.Module:
+    def load(self, name: str, pretrained: bool, config_path: str | None = None, **kwargs) -> nn.Module:
         from transformers import AutoModel, AutoConfig
-        hf_model = (AutoModel.from_pretrained(name, **kwargs) if pretrained
-                    else AutoModel.from_config(AutoConfig.from_pretrained(name, **kwargs)))
+        if pretrained:
+            hf_model = AutoModel.from_pretrained(name, **kwargs)
+        else:
+            # config_path: a local directory holding config.json, so building
+            # the (randomly-initialized) architecture needs no network call
+            # to `name`'s repo at all -- used when the caller already has
+            # every weight it needs from elsewhere (a merged checkpoint).
+            cfg = AutoConfig.from_pretrained(config_path or name, **kwargs)
+            hf_model = AutoModel.from_config(cfg)
         return _HFBackboneWrapper(hf_model)
 
     def forward_features(self, backbone: nn.Module, x: torch.Tensor) -> torch.Tensor:
@@ -106,12 +113,13 @@ class LoRC(nn.Module):
         pretrained: bool = True,
         cls_index: int = 0,
         num_register_tokens: int | None = None,
+        backbone_config_path: str | None = None,
     ):
         super().__init__()
         self.cls_index = cls_index
         adapter = HFBackboneAdapter()
         self._adapter = adapter
-        raw_backbone = adapter.load(backbone_name, pretrained)
+        raw_backbone = adapter.load(backbone_name, pretrained, config_path=backbone_config_path)
 
         backbone_dim = backbone_dim or adapter.output_dim(raw_backbone)
         # Cached against the RAW (pre-peft) backbone — see _HFBackboneWrapper.

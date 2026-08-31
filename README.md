@@ -22,14 +22,20 @@ depends on (proven exactly, not just observed empirically — see
   plus the pair-aware energy augmentation described above, ramped in
   linearly across the epoch (0% of batches augmented at step 0 → 100% by the
   final step).
-- **Weights:** ONE file, `mlorc-full.pt` (~1.6GB, bf16), hosted on a private
-  HF hub repo (`buxtcodes/TechJam-Modulated-LoRC`), pulled automatically at
-  runtime. LoRA is folded directly into the backbone weights (`peft`'s
-  `merge_and_unload()`, verified numerically exact before shipping — max
-  output difference 1e-12, pure floating-point noise), so this one file is
-  fully self-contained: no separate download of the DINOv3 backbone from
-  anywhere else, no LoRA config to keep in sync. No weights are committed to
-  this repo itself.
+- **Weights:** TWO small files, both from our own private HF hub repo
+  (`buxtcodes/TechJam-Modulated-LoRC`), pulled automatically at runtime —
+  `mlorc-full.pt` (~1.6GB, bf16) and `dinov3_config.json` (a few KB,
+  architecture metadata only, no weights). LoRA is folded directly into the
+  backbone weights (`peft`'s `merge_and_unload()`, verified numerically
+  exact before shipping — max output difference 1e-12, pure floating-point
+  noise), so nothing else is needed to build or load the model: **no
+  interaction with `facebook/dinov3-vith16plus-pretrain-lvd1689m` at all**
+  — that repo is gated with manual review by Meta (`gated: manual`,
+  confirmed via the HF API), so mirroring just its config (never its
+  weights) here removes that dependency entirely. Verified with the gated
+  repo's local cache deliberately removed — loading still succeeds and
+  reproduces bit-identical output. No weights are committed to this repo
+  itself.
 
 ## Setup and installation
 
@@ -42,16 +48,8 @@ huggingface-cli login         # or: export HF_TOKEN=hf_...
 ```
 
 The weights repo is private — you need HF access to
-`buxtcodes/TechJam-Modulated-LoRC`. `mlorc-full.pt` is the only *weights*
-file downloaded — building the backbone's architecture (before loading those
-weights onto it) still fetches DINOv3's small `config.json` (a few KB, not
-its weights) from `facebook/dinov3-vith16plus-pretrain-lvd1689m`. That repo
-is **gated with manual review** (`gated: manual`, confirmed via the HF API)
-— not an instant click-through license: request access on the model page
-and wait for Meta to approve it *before* your token can fetch anything from
-that repo, even the tiny config file. Do this ahead of time; it's a real
-prerequisite, not a formality. Nothing sizeable comes from anywhere but
-`mlorc-full.pt`.
+`buxtcodes/TechJam-Modulated-LoRC`. That's the only gate to clear: no Meta
+approval, no second HF repo, nothing else to request access to.
 
 ## Repository structure
 
