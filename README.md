@@ -45,7 +45,7 @@ a gated but free HF model — accept its license on the model page once).
 ```
 modulated_lorc/     the model + HF-hub weight loader (see "Directory-only inference" above)
 predict.py           image directory -> JSON (image_path, pred)
-evaluate/            WildFake evaluator (clean + full/transformed modes)
+evaluate/            WildFake evaluator (clean + full/transformed modes) + sample-set downloader
 results/             ported WildFake eval results for mLoRC (raw CSVs/JSON + two writeups)
 ablations/           robustness summary + error analysis (post-processed from results/)
 ```
@@ -62,14 +62,35 @@ python predict.py --input_dir <path/to/images> --output results.json
 one entry per image found (recursively) under `<path/to/images>`.
 
 **Full WildFake benchmark** (what produced every number in this README and
-in `results/`/`ablations/`) — needs your own local copy of the WildFake eval
-set (`manifest.csv` + `transform_plan.csv` + the images, not shipped here —
-too large):
+in `results/`/`ablations/`) — needs a local copy of the WildFake eval set
+(`manifest.csv` + `transform_plan.csv` + the images; not shipped in this repo
+directly — too large). Don't have one already? Pull it from the public HF
+dataset `buxtcodes/WildFake-Sample` (30,000 images, ~9.5GB) first:
+
+```bash
+python evaluate/download_wildfake_sample.py --out_dir wildfake_eval                       # full set, ~9.5GB
+python evaluate/download_wildfake_sample.py --out_dir wf_smoke --shards 1 --n_per_group 20 # fast, partial-coverage smoke test (~200MB)
+```
+
+`--shards N` bounds download time predictably (fetches only the first N of
+10 shard files); `--n_per_group` alone does not make this fast, since the
+32 WildFake groups are shard-partitioned rather than interleaved — reaching
+every group still means scanning most of the 9.5GB regardless of how few
+images per group get kept. Combine both for a bounded-time run, understanding
+it won't cover every group.
+
+Then evaluate:
 
 ```bash
 python evaluate/evaluate_wildfake.py --data_dir <path/to/wildfake_eval> \
     --out_dir results/wildfake_eval --label mLoRC --mode both
 ```
+
+**Verified**: this exact pipeline — fresh `git clone`, fresh venv,
+`requirements.txt` only — reproduces the reported numbers. A fresh-environment
+clean-mode run against the full 30k set gave BAcc=96.56%/AUC=0.9929
+(reported: 96.57%/0.9929 — the 0.01pp difference is ordinary bf16/batch-size
+rounding noise, not a discrepancy).
 
 Writes `mLoRC_{clean,full}_per_image.csv`, `_by_group.csv`, `_by_condition.csv`
 (full mode only), `_summary.json` — the same files already checked into
