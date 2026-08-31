@@ -1,23 +1,12 @@
-"""Evaluate Modulated-LoRC against a local copy of the WildFake multi-
-generator eval set (`manifest.csv` + `transform_plan.csv`, one `local_path`
-column matching an image under `--data_dir`; not shipped in this repo —
-point `--data_dir` at your own copy).
+"""Evaluate Modulated-LoRC against a local copy of the WildFake eval set
+(`manifest.csv` + `transform_plan.csv`; not shipped here — point
+--data_dir at your own copy).
 
-Two modes:
-  --mode clean: every image gets ONLY a standard q=96 JPEG pass.
-  --mode full:  every image gets its assigned condition from
-                `transform_plan.csv`, applied FIRST, then a final q=96 JPEG
-                pass LAST (`transforms.stack_baseline_last`) — matches
-                training's own mandatory-JPEG convention, so every image
-                ends in the same standardized encoding regardless of which
-                condition it drew.
-  --mode both (default): runs both, one manifest load.
-
-Trimmed from the main research codebase's `evaluate_wildfake.py`: single
-model (Modulated-LoRC via the HF hub, not a multi-backend registry), and a
-plain sequential batching loop rather than the main codebase's
-threaded CPU/GPU-overlap prefetcher — simpler to read, at some throughput
-cost on very large runs.
+--mode clean: every image gets only a q=96 JPEG pass.
+--mode full:  every image gets its transform_plan.csv condition, then a
+              final q=96 JPEG pass (matches training's mandatory-JPEG
+              convention).
+--mode both (default): both, one manifest load.
 
 Usage:
     python evaluate_wildfake.py --data_dir /path/to/wildfake_eval --out_dir results/wildfake_eval
@@ -40,8 +29,7 @@ from modulated_lorc import ModulatedLoRC
 from transforms import FAMILY_BY_NAME, RAW_BY_NAME, stack_baseline_last, tf_jpeg
 
 IMAGE_SIZE = 224
-IMAGENET_MEAN = [0.485, 0.456, 0.406]
-IMAGENET_STD = [0.229, 0.224, 0.225]
+IMAGENET_MEAN, IMAGENET_STD = [0.485, 0.456, 0.406], [0.229, 0.224, 0.225]
 
 _CROP = transforms.CenterCrop(IMAGE_SIZE)
 _NORM = transforms.Compose([transforms.ToTensor(), transforms.Normalize(IMAGENET_MEAN, IMAGENET_STD)])
@@ -101,7 +89,7 @@ def summarize(rows: list[dict], key: str) -> list[dict]:
         probs = np.array([it["p_fake"] for it in items])
         preds = (probs >= 0.5).astype(int)
         acc = float((preds == labels).mean() * 100)
-        bacc = float(balanced_accuracy_score(labels, preds) * 100) if len(np.unique(labels)) > 1 else float((preds == labels).mean() * 100)
+        bacc = float(balanced_accuracy_score(labels, preds) * 100) if len(np.unique(labels)) > 1 else acc
         try:
             auc = float(roc_auc_score(labels, probs))
         except ValueError:

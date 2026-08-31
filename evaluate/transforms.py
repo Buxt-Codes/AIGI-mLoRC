@@ -1,15 +1,12 @@
-"""PIL-space corruption functions for the transform-robustness battery.
-
-Trimmed from the main research codebase's `lorc/robustness_battery.py` down
-to just the pieces `evaluate_wildfake.py` here needs: the 14 non-clean
-condition functions, and the "condition first, then a final q=96 JPEG pass"
-stacking order (matches training's own mandatory-JPEG convention, so
-evaluating any other way would test the model on an artifact distribution
-it never saw).
-"""
+"""PIL-space corruption functions for the 15-condition transform battery
+`evaluate_wildfake.py` uses. `stack_baseline_last` applies a condition's own
+corruption first, then a final q=96 JPEG pass — matches training's own
+transform-then-JPEG convention, so eval sees the same artifact distribution
+training did."""
 import io
 
 import numpy as np
+import torch
 from PIL import Image, ImageFilter
 from torchvision import transforms
 
@@ -47,7 +44,6 @@ def tf_noise(sigma, seed=None):
 
 
 def tf_jitter(strength, seed=None):
-    import torch
     jitter = transforms.ColorJitter(brightness=strength, contrast=strength, saturation=strength)
     def _fn(img):
         if seed is not None:
@@ -66,9 +62,6 @@ def tf_crop(frac):
 
 
 def stack_baseline_last(fn):
-    """The condition's own corruption first, then a final q=96 JPEG pass —
-    standardizes the final encoding every image ends up in, matching
-    training's own transform-then-JPEG convention."""
     return lambda img: jpeg_compress(fn(img), 96)
 
 
