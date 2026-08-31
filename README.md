@@ -170,12 +170,15 @@ autocast + `cudnn.benchmark=True`, batch size swept 16→224:
 
 | config | best throughput |
 |---|---|
-| fp32-storage backbone | 136.6 img/s (batch=160, 4.92GB) |
-| bf16-storage frozen backbone (`cast_frozen_params_to_bf16`) | **143.5 img/s** (batch=192, 3.39GB) |
+| fp32-storage backbone | 153.9 img/s (batch=128, 4.54GB) |
+| bf16-storage frozen backbone (`cast_frozen_params_to_bf16`) | **163.5 img/s** (batch=160, 3.04GB) |
 
 Both sweeps plateau well before the 3090 Ti's 24GB fills — this is
 compute-bound, not memory-bound, so the number above is a real ceiling for
 this architecture on this GPU, not an artifact of an under-sized batch.
+Measured on the merged checkpoint (no `peft` wrapper at inference time) —
+~13-14% faster than the earlier LoRA-wrapped architecture, re-measured
+rather than assumed after the merge.
 
 ## Limitations & future work
 

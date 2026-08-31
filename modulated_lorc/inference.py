@@ -8,7 +8,6 @@ private HF hub repo `buxtcodes/TechJam-Modulated-LoRC`, run predictions.
 from __future__ import annotations
 
 import io
-import shutil
 from pathlib import Path
 
 import torch
@@ -55,14 +54,8 @@ class ModulatedLoRC:
         device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         weights_path = hf_hub_download(repo_id=repo_id, filename=filename, token=hf_token)
         config_path = hf_hub_download(repo_id=repo_id, filename=CONFIG_FILENAME, token=hf_token)
-        # AutoConfig.from_pretrained(dir) looks for a file literally named
-        # "config.json" inside that directory -- point it at one containing
-        # just that, so building the architecture never touches DINOv3's repo.
-        config_dir = Path(config_path).parent / "_dinov3_config_dir"
-        config_dir.mkdir(exist_ok=True)
-        shutil.copy(config_path, config_dir / "config.json")
 
-        model = LoRC(backbone_config_path=str(config_dir), **MODEL_KWARGS).to(device)
+        model = LoRC(backbone_config_path=config_path, **MODEL_KWARGS).to(device)
         ckpt = torch.load(weights_path, map_location=device, weights_only=False)
         model.load_state_dict(ckpt.get("model_state", ckpt), strict=True)  # full checkpoint -> exact match required
         model.eval()
