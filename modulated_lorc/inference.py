@@ -8,6 +8,7 @@ step needed), run predictions on images.
 """
 from __future__ import annotations
 
+import io
 from pathlib import Path
 
 import torch
@@ -20,6 +21,7 @@ REPO_ID = "buxtcodes/TechJam-Modulated-LoRC"
 WEIGHTS_FILENAME = "modulated-lorc.pt"
 
 IMAGE_SIZE = 224
+JPEG_QUALITY = 96
 IMAGENET_MEAN = [0.485, 0.456, 0.406]
 IMAGENET_STD = [0.229, 0.224, 0.225]
 
@@ -28,12 +30,28 @@ IMAGENET_STD = [0.229, 0.224, 0.225]
 MODEL_KWARGS = dict(attn_rank=64, lora_rank=32, lora_alpha=32)
 
 
+def _jpeg_pass(img: Image.Image, quality: int = JPEG_QUALITY) -> Image.Image:
+    """Standardize the encoding every image is seen through, same as
+    training's mandatory-JPEG convention — not a resize, just a re-encode."""
+    buf = io.BytesIO()
+    img.convert("RGB").save(buf, format="JPEG", quality=quality)
+    buf.seek(0)
+    return Image.open(buf).convert("RGB")
+
+
 class ModulatedLoRC:
     def __init__(self, model: LoRC, device: str):
         self.model = model
         self.device = device
+        # CENTER CROP, not resize — this is the actual eval/inference
+        # transform the checkpoint was trained and evaluated with
+        # (`lorc.dataset.make_val_transform`: JPEG q=96 pass, then
+        # CenterCrop(224), never a full-image resize). Using Resize here
+        # instead would silently feed the model out-of-distribution input
+        # and not reproduce the reported WildFake numbers.
         self.tf = transforms.Compose([
-            transforms.Resize((IMAGE_SIZE, IMAGE_SIZE)),
+            transforms.Lambda(_jpeg_pass),
+            transforms.CenterCrop(IMAGE_SIZE),
             transforms.ToTensor(),
             transforms.Normalize(mean=IMAGENET_MEAN, std=IMAGENET_STD),
         ])

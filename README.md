@@ -40,7 +40,19 @@ The weights repo is private — you need HF access to
 `buxtcodes/TechJam-Modulated-LoRC` (and to `facebook/dinov3-vith16plus-pretrain-lvd1689m`,
 a gated but free HF model — accept its license on the model page once).
 
+## Repository structure
+
+```
+modulated_lorc/     the model + HF-hub weight loader (see "Directory-only inference" above)
+predict.py           image directory -> JSON (image_path, pred)
+evaluate/            WildFake evaluator (clean + full/transformed modes)
+results/             ported WildFake eval results for run 1 (raw CSVs/JSON + two writeups)
+ablations/           robustness summary + error analysis (post-processed from results/)
+```
+
 ## Steps to reproduce results
+
+**Single-image / directory prediction** (what most people want):
 
 ```bash
 python predict.py --input_dir <path/to/images> --output results.json
@@ -49,21 +61,38 @@ python predict.py --input_dir <path/to/images> --output results.json
 `results.json` is a list of `{"image_path": ..., "pred": <float 0-1, P(fake)>}`,
 one entry per image found (recursively) under `<path/to/images>`.
 
-The WildFake evaluation numbers in this README and in `ablations/` were
-produced by running the model over the full 30,000-image WildFake eval set
-(clean pass + a 15-condition transform battery: Blur/Noise/JPEG/Resize/
-CenterCrop/ColorJitter at multiple severities) in the main research
-codebase, then post-processed by `analysis/robustness_and_error_report.py`
-in that same codebase (not shipped here — see `ablations/` for its output).
-Inference throughput (below) was likewise benchmarked directly in the main
-codebase (`lorc.model.LoRC`, the same architecture this package reproduces),
-not re-measured from this trimmed package, to avoid the trimmed
-implementation reporting a number the "real" implementation can't back up.
+**Full WildFake benchmark** (what produced every number in this README and
+in `results/`/`ablations/`) — needs your own local copy of the WildFake eval
+set (`manifest.csv` + `transform_plan.csv` + the images, not shipped here —
+too large):
+
+```bash
+python evaluate/evaluate_wildfake.py --data_dir <path/to/wildfake_eval> \
+    --out_dir results/wildfake_eval --label run1 --mode both
+```
+
+Writes `run1_{clean,full}_per_image.csv`, `_by_group.csv`, `_by_condition.csv`
+(full mode only), `_summary.json` — the same files already checked into
+`results/wildfake_eval/` from the original run. `results/RESULTS.md` has the
+full per-group breakdown (clean, then full, then transform conditions ranked
+best-to-worst); `results/THROUGHPUT.md` has the throughput benchmark on its
+own. Both were generated from these exact output files.
+
+The error-analysis/robustness-summary post-processing in `ablations/` was
+produced by `analysis/robustness_and_error_report.py` in the main research
+codebase (not shipped here — it just reads the same per-image CSVs
+`evaluate_wildfake.py` above writes). Inference throughput was likewise
+benchmarked directly in the main codebase (`lorc.model.LoRC`, the same
+architecture this package reproduces), not re-measured from this trimmed
+package, to avoid the trimmed implementation reporting a number the "real"
+implementation can't back up.
 
 ## Robustness Evaluation Summary
 
 Full 30,000-image WildFake eval, clean vs. representative transform
-conditions (full table for every one of the 15 conditions: `ablations/robustness_summary.json` / `ablations/REPORT.md`):
+conditions (full per-group breakdown for clean, for full, and every one of
+the 15 conditions ranked best-to-worst: `results/RESULTS.md`; raw data:
+`results/wildfake_eval/`; the same aggregate view: `ablations/robustness_summary.json`):
 
 | condition | accuracy | balanced acc | AUC |
 |---|---|---|---|
@@ -108,9 +137,9 @@ Full 30k-image error analysis: `ablations/error_analysis.json`.
 
 ## Inference throughput
 
-Measured directly in the main training codebase (not this trimmed package),
-RTX 3090 Ti, 224×224 input, `bf16` autocast + `cudnn.benchmark=True`, batch
-size swept 16→224:
+Full writeup: `results/THROUGHPUT.md`. Measured directly in the main training
+codebase (not this trimmed package), RTX 3090 Ti, 224×224 input, `bf16`
+autocast + `cudnn.benchmark=True`, batch size swept 16→224:
 
 | config | best throughput |
 |---|---|
