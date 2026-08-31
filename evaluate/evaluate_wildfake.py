@@ -25,7 +25,7 @@ from torchvision import transforms
 from sklearn.metrics import balanced_accuracy_score, roc_auc_score
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-from modulated_lorc import ModulatedLoRC
+from mlorc import ModulatedLoRC
 from transforms import FAMILY_BY_NAME, RAW_BY_NAME, stack_baseline_last, tf_jpeg
 
 LABEL = "mLoRC"

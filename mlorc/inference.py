@@ -1,7 +1,7 @@
 """High-level inference wrapper: build the model, load weights from the
 private HF hub repo `buxtcodes/TechJam-Modulated-LoRC`, run predictions.
 
-    from modulated_lorc import ModulatedLoRC
+    from mlorc import ModulatedLoRC
     model = ModulatedLoRC.from_pretrained()
     model.predict_image("photo.jpg")   # {"label": "fake", "p_fake": 0.93, "p_real": 0.07}
 """

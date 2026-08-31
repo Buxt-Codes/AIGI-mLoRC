@@ -11,7 +11,7 @@ import argparse
 import json
 from pathlib import Path
 
-from modulated_lorc import ModulatedLoRC
+from mlorc import ModulatedLoRC
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
 

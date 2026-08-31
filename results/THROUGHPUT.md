@@ -1,7 +1,7 @@
 # mLoRC — Inference Throughput
 
 Measured **directly in the main research codebase** (`lorc.model.LoRC`, the
-same architecture this repo's `modulated_lorc/model.py` reproduces) — not
+same architecture this repo's `mlorc/model.py` reproduces) — not
 derived from this trimmed package — to avoid reporting a number the "real"
 implementation can't back up. Uses the **merged checkpoint** (`mlorc-full.pt`
 — LoRA already folded into the backbone weights, no `peft` wrapper at

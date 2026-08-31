@@ -54,7 +54,7 @@ approval, no second HF repo, nothing else to request access to.
 ## Repository structure
 
 ```
-modulated_lorc/     the model + HF-hub weight loader (see "Directory-only inference" above)
+mlorc/               the model + HF-hub weight loader (see "Directory-only inference" above)
 predict.py           image directory -> JSON (image_path, pred)
 evaluate/            WildFake evaluator (clean + full/transformed modes) + sample-set downloader
 results/             ported WildFake eval results for mLoRC (raw CSVs/JSON + two writeups)
